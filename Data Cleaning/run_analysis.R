@@ -16,7 +16,8 @@ names(activityIndx) = c('activityIndex','activity')
 for (j in c('test','train')) {
     for (i in dir(j)) {
         file_path = paste0(j,'/',i)
-        if (!dir.exists(file_path)) {
+        if (!dir.exists(file_path)) # read the files, not directory
+        {
             file_value = read.table(file_path)
             file_name = strsplit(i,'\\.')[[1]][1]
             assign(file_name,file_value)
@@ -49,7 +50,7 @@ groupedMean = aggregate(.~ subjectIndex + activity, namedDat, mean)
 meltDat = melt(groupedMean,id.vars = c("subjectIndex","activity"),
                value.name = "meanValue")
 tidyDat = meltDat[order(meltDat$subjectIndex,meltDat$activity),]
-names(tidyDat)[names(tidyDat)=='variable'] = "measurement"
+names(tidyDat)[names(tidyDat)=='variable'] = "measurement" # Since variable.name cannot be used melt() in my computer
 row.names(tidyDat) = NULL
 write.table(tidyDat,"tidyData.txt")
 setwd(originDir)

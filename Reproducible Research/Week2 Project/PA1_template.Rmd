@@ -1,0 +1,95 @@
+---
+title: "Project 1 of Reproducible Coureses"
+author: "Ri Feng"
+date: "5/28/2017"
+output: html_document
+---
+
+```{r setup,echo=FALSE}
+library(knitr)
+opts_chunk$set(echo = TRUE)
+opts_chunk$set(cache = T)
+```
+This file is for the [Course Project](https://github.com/rdpeng/RepData_PeerAssessment1). Before doing the project requests, we should import data first.
+```{r read_data}
+    dat = read.csv('data/activity.csv')
+```
+
+### Histogram of the total number of steps taken each day
+```{r Task1}
+dat.1 = with(dat,tapply(steps,date,sum,na.rm=T))
+plot(x=as.Date(names(dat.1)),y=dat.1,type = 'h',
+     xlab = "", ylab = "Total Steps",
+     main = "Total Steps on each day")
+```
+
+### Mean and median number of steps taken each day
+```{r Task2}
+dat.2 = aggregate(steps~date,data = dat,
+                  FUN = function(x) c(mean=mean(x),median=median(x)))
+head(dat.2)
+```
+
+The 2nd column of dat.plot2 is a matrix with 2 columns. Hence, if we want to extract average steps, we need 2 layers of brackets.
+
+### Time series plot of the average number of steps taken
+```{r Task3}
+dat.ts = aggregate(steps~interval,data = dat,FUN = mean)
+plot(x = dat.ts$interval,y = dat.ts$steps,type = 'l',
+    xlab = '', ylab = 'Average Steps',
+    main = 'Time Series on Average Steps') 
+```
+
+### The 5-minute interval that, on average, contains the maximum number of steps
+```{r Task4}
+dat.ts[dat.ts$steps==max(dat.ts$steps),]
+```
+It seems *interval 835* contain the maxium value.
+
+### Code to describe and show a strategy for imputing missing data
+To deal with the missing value, we can caculate the percentage of missing value of each group (here we group dataset by date). If the percentage is less than 5%, then we just leave out the NAs; if the percentage is greater than 5%, we skip the group and wait for further data collection.
+```{r}
+no.na = sum(complete.cases(dat)==FALSE)
+```
+Total number of rows with missing value is `r no.na`.
+```{r Task5}
+pofna = function(x) {sum(is.na(x))/length(x)}
+temp = aggregate(steps~date,data = dat,FUN = pofna,na.action = na.pass)
+colnames(temp)[2] = 'percent'
+library(reshape2)
+dat.3 = merge(dat,temp,by = 'date')
+dat.3 = dat.3[complete.cases(dat.3) & dat.3$percent<0.05,-4]
+head(dat.3)
+```
+
+*pofna* is the function to calculate NA percent of each variable. *na.action = na.pass* in *aggregate* function used to keep the NA value, otherwise the default will omit NAs.
+
+### Histogram of the total number of steps taken each day after missing values are imputed
+```{r Task6}
+dat.4 = aggregate(steps~date,data = dat.3,FUN = sum)
+plot(x = as.Date(dat.4$date),y = dat.4$steps, type = 'h',
+     xlab = '',ylab = 'Total Steps',
+     main = 'Total Steps on each day')
+```
+
+### Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+First, I split weekdays and weekends data from the original one.
+```{r Task7,results='hide'}
+library(lubridate)
+weekday = wday(as.Date(dat$date),label = T)
+temp = cbind(dat,weekday)
+weekends = subset(temp,temp$weekday %in% c('Sat','Sun'))
+weekdays = subset(temp,!(temp$weekday %in% c('Sat','Sun')))
+```
+For each individual dataset, caculate the average steps on each interval.
+```{r}
+dat.weekends = aggregate(steps~interval,data = weekends,FUN = mean)
+dat.weekdays = aggregate(steps~interval,data = weekdays,FUN = mean)
+with(dat.weekends,plot(interval,steps,type='l',
+                       xlab = 'Interval', ylab = 'Average Steps',
+                       main = 'Steps comparision on weekdays and weekends',
+                       col = 'black'))
+with(dat.weekdays,lines(interval,steps,col='blue'))
+legend('topright',c('Weekends','Weekdays'),col = c('black','blue'),lty = c(1,1),)
+```
+

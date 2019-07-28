@@ -1,0 +1,10 @@
+try link [link_name][1]
+[1]: www.baidu.com "Baidu"
+
+bullet.
+1. First
+1.First without space
+ 1. space before 1
+ 1.no space after 1
+
+* hello

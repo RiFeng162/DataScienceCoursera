@@ -7,16 +7,14 @@ output:
     keep_md: TRUE
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
-par(mfrow = c(1,1), mar = c(4,2,4,2))
-```
+
 
 This article is for the Reproducible Research [Week 2 project](https://github.com/rdpeng/RepData_PeerAssessment1) of Data Science in Coursera. The purpose is importing and analyzing the _activity_ dataset which records the personal daily walking steps.
 
 
 ## Importing data
-```{r importing-data, cache=TRUE}
+
+```r
 datUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 datName <- "data/activity.zip"
 
@@ -33,26 +31,31 @@ stepDat <- read.csv("activity.csv", colClasses = c("integer", "Date", "integer")
 The dataset has three variables: _steps_, _date_ and _interval_. First, we will explore the pattern of daily steps.
 
 ## Histogram of total number of steps per day
-```{r daily-steps-histogram}
+
+```r
 attach(stepDat)
 total_steps <- tapply(steps, date, sum, na.rm = TRUE)
 plot(as.Date(row.names(total_steps)), total_steps, type = "h",
      main = "Total Steps Taken Each Day",
      ylab = "Total Steps", xlab = "")
 ```
+
+<img src="Steps-Activity-Analysis_files/figure-html/daily-steps-histogram-1.png" style="display: block; margin: auto;" />
 From the plot, we can find two things: 
 1. the time period of the data is about 2 months, from October to December;
 2. most daily steps fall into the interval from 10,000 to 15,000.
 
 ## Mean and median of daily steps
-```{r daily-steps-statistics, results='hide'}
+
+```r
 mean_steps <- mean(total_steps)
 median_steps <- median(total_steps)
 ```
-The mean value of the daily steps is `r round(mean_steps,2)` and the median value is `r median_steps`.
+The mean value of the daily steps is 9354.23 and the median value is 10395.
 
 ## Time series plot and max values
-```{r time-series-plot}
+
+```r
 # time series plot 
 avg_interval_steps <- tapply(steps, interval, mean, na.rm = TRUE)
 interval_level <- unique(interval)
@@ -67,24 +70,47 @@ max_label <- paste0("(",max_interval,",",round(max_value,2),")")
 text(max_interval+100, max_value+3, max_label, cex = 0.7)
 lines(c(max_interval,max_interval), c(max_value, -10), col = "red")
 ```
-From the plot, we can find the max value of steps is `r round(max_value, 2)` and its interval is `r max_interval`.
+
+<img src="Steps-Activity-Analysis_files/figure-html/time-series-plot-1.png" style="display: block; margin: auto;" />
+From the plot, we can find the max value of steps is 206.17 and its interval is 835.
 
 ## Strategy of imputing missing values
 Before imputing _NA_, we need to explore the distribution of the missing values. 
-```{r na_exploration}
+
+```r
 library(knitr)
 kable(summary(stepDat))
+```
 
+         steps             date               interval    
+---  ---------------  -------------------  ---------------
+     Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0 
+     1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8 
+     Median :  0.00   Median :2012-10-31   Median :1177.5 
+     Mean   : 37.38   Mean   :2012-10-31   Mean   :1177.5 
+     3rd Qu.: 12.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2 
+     Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0 
+     NA's   :2304     NA                   NA             
+
+```r
 na_value <- as.integer(is.na(steps))
 na_value_byDate <- tapply(na_value, date, sum)
 na_freq_table <- table(na_value_byDate)
 kable(na_freq_table) # it can be seen 8 days value missing
 ```
-There are `r sum(na_value)` _NAs_ in the dataset and all of them falls in _steps_ variable. To be more specific, for each day, it has `r length(interval_level)` records and there are total `r na_freq_table[[2]]` days' records missing.
+
+
+
+na_value_byDate    Freq
+----------------  -----
+0                    53
+288                   8
+There are 2304 _NAs_ in the dataset and all of them falls in _steps_ variable. To be more specific, for each day, it has 288 records and there are total 8 days' records missing.
 
 My strategy to impute missing values is using the daily walking pattern (in average sense, which we have calculated in time series plot) to replace the days without records.
 
-```{r impute-NA}
+
+```r
 steps2 <- vector(mode = "numeric", length = length(steps))
 for (i in 1:length(steps)) {
   if (is.na(steps[i])) {
@@ -95,18 +121,22 @@ for (i in 1:length(steps)) {
   }
 }
 ```
-And we can check there is `r sum(is.na(steps2))` NAs in the adjusted data.
+And we can check there is 0 NAs in the adjusted data.
 
 ## Histogram of adjusted daily steps
-```{r adjusted-steps-histogram}
+
+```r
 total_steps2 <- tapply(steps2, date, sum)
 plot(as.Date(unique(date)), total_steps2, type = "h",
      main = "Adjusted Total Steps Each Day",
      ylab = "Total Steps per Day", xlab = "")
 ```
 
+<img src="Steps-Activity-Analysis_files/figure-html/adjusted-steps-histogram-1.png" style="display: block; margin: auto;" />
+
 ## Comparison of weekdays and weekends walking patterns
-```{r comparison}
+
+```r
 wday <- weekdays(date)
 stepDat2 <- cbind(stepDat, wday)
 steps_weekdays <- stepDat2[!wday %in% c("Saturday", "Sunday"),]
@@ -120,7 +150,11 @@ plot(interval_level, avg_steps_weekdays, type = "l",
      main = "Weekday Walking Pattern", xlab = "", ylab = "", ylim = c(0,250))
 plot(interval_level, avg_steps_weekends, type = "l",
      main = "Weekend Walking Pattern", xlab = "", ylab = "",ylim = c(0,250))
+```
 
+<img src="Steps-Activity-Analysis_files/figure-html/comparison-1.png" style="display: block; margin: auto;" />
+
+```r
 detach(stepDat)
 ```
 From the plots, we can find that:  

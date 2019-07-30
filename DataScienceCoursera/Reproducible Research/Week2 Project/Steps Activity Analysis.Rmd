@@ -36,20 +36,18 @@ The dataset has three variables: _steps_, _date_ and _interval_. First, we will 
 ```{r daily-steps-histogram}
 attach(stepDat)
 total_steps <- tapply(steps, date, sum, na.rm = TRUE)
-plot(as.Date(row.names(total_steps)), total_steps, type = "h",
+hist(total_steps,breaks = 10,
      main = "Total Steps Taken Each Day",
-     ylab = "Total Steps", xlab = "")
+     xlab = "Daily Total Steps")
 ```
-From the plot, we can find two things: 
-1. the time period of the data is about 2 months, from October to December;
-2. most daily steps fall into the interval from 10,000 to 15,000.
+From the plot, we can find that there are two peaks: one is around 0 and the other is around 10,000.
 
 ## Mean and median of daily steps
 ```{r daily-steps-statistics, results='hide'}
-mean_steps <- mean(total_steps)
-median_steps <- median(total_steps)
+sum_steps <- summary(total_steps)
+print(sum_steps)
 ```
-The mean value of the daily steps is `r round(mean_steps,2)` and the median value is `r median_steps`.
+The mean value of the daily steps is `r sum_steps[[4]]` and the median value is `r sum_steps[[3]]`.
 
 ## Time series plot and max values
 ```{r time-series-plot}
@@ -78,7 +76,7 @@ kable(summary(stepDat))
 na_value <- as.integer(is.na(steps))
 na_value_byDate <- tapply(na_value, date, sum)
 na_freq_table <- table(na_value_byDate)
-kable(na_freq_table) # it can be seen 8 days value missing
+print(na_freq_table)
 ```
 There are `r sum(na_value)` _NAs_ in the dataset and all of them falls in _steps_ variable. To be more specific, for each day, it has `r length(interval_level)` records and there are total `r na_freq_table[[2]]` days' records missing.
 
@@ -100,9 +98,9 @@ And we can check there is `r sum(is.na(steps2))` NAs in the adjusted data.
 ## Histogram of adjusted daily steps
 ```{r adjusted-steps-histogram}
 total_steps2 <- tapply(steps2, date, sum)
-plot(as.Date(unique(date)), total_steps2, type = "h",
+hist(total_steps,breaks = 10,
      main = "Adjusted Total Steps Each Day",
-     ylab = "Total Steps per Day", xlab = "")
+     xlab = "Daily Total Steps")
 ```
 
 ## Comparison of weekdays and weekends walking patterns

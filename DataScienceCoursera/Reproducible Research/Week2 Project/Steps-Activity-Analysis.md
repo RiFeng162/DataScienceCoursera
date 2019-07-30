@@ -35,23 +35,21 @@ The dataset has three variables: _steps_, _date_ and _interval_. First, we will 
 ```r
 attach(stepDat)
 total_steps <- tapply(steps, date, sum, na.rm = TRUE)
-plot(as.Date(row.names(total_steps)), total_steps, type = "h",
+hist(total_steps,breaks = 10,
      main = "Total Steps Taken Each Day",
-     ylab = "Total Steps", xlab = "")
+     xlab = "Daily Total Steps")
 ```
 
 <img src="Steps-Activity-Analysis_files/figure-html/daily-steps-histogram-1.png" style="display: block; margin: auto;" />
-From the plot, we can find two things: 
-1. the time period of the data is about 2 months, from October to December;
-2. most daily steps fall into the interval from 10,000 to 15,000.
+From the plot, we can find that there are two peaks: one is around 0 and the other is around 10,000.
 
 ## Mean and median of daily steps
 
 ```r
-mean_steps <- mean(total_steps)
-median_steps <- median(total_steps)
+sum_steps <- summary(total_steps)
+print(sum_steps)
 ```
-The mean value of the daily steps is 9354.23 and the median value is 10395.
+The mean value of the daily steps is 9354.2295082 and the median value is 1.0395\times 10^{4}.
 
 ## Time series plot and max values
 
@@ -96,15 +94,14 @@ kable(summary(stepDat))
 na_value <- as.integer(is.na(steps))
 na_value_byDate <- tapply(na_value, date, sum)
 na_freq_table <- table(na_value_byDate)
-kable(na_freq_table) # it can be seen 8 days value missing
+print(na_freq_table)
 ```
 
-
-
-na_value_byDate    Freq
-----------------  -----
-0                    53
-288                   8
+```
+## na_value_byDate
+##   0 288 
+##  53   8
+```
 There are 2304 _NAs_ in the dataset and all of them falls in _steps_ variable. To be more specific, for each day, it has 288 records and there are total 8 days' records missing.
 
 My strategy to impute missing values is using the daily walking pattern (in average sense, which we have calculated in time series plot) to replace the days without records.
@@ -127,9 +124,9 @@ And we can check there is 0 NAs in the adjusted data.
 
 ```r
 total_steps2 <- tapply(steps2, date, sum)
-plot(as.Date(unique(date)), total_steps2, type = "h",
+hist(total_steps,breaks = 10,
      main = "Adjusted Total Steps Each Day",
-     ylab = "Total Steps per Day", xlab = "")
+     xlab = "Daily Total Steps")
 ```
 
 <img src="Steps-Activity-Analysis_files/figure-html/adjusted-steps-histogram-1.png" style="display: block; margin: auto;" />

@@ -1,33 +1,110 @@
 ---
-title: "test"
-author: "fengri"
-date: "7/30/2019"
+title: "Effect Analysis of Various Weather Events"
+author: "FengRi"
+date: "15/8/2019"
 output: 
   html_document:
     keep_md: TRUE
-  
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+pkg <- c("dplyr", "ggplot2", "knitr")
+lapply(pkg, require, character.only = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# Synopsis
+This document is for the [Project 2](https://www.coursera.org/learn/reproducible-research/peer/OMZ37/course-project-2) of Reproducible Research on Coursera. The project requires to find which kinds of weather types have greatest impact on population health and economy respectively. By analyzing the given data, it turns out that `r TORNADO` is most harmful to population health while `r FLOOD` causes greatest economic loss.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# Data Processing
+```{r data-importing, cache=TRUE}
+fileName <- "StormData.cvs.bz2"
+pathName <- "data/"
+Url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+destFile <- paste0(pathName, fileName)
 
-```{r cars}
-summary(cars)
+if (!file.exists(destFile)) {
+  dir.create(pathName, showWarnings = FALSE)
+  download.file(Url,destFile)
+}
+
+stormdata <- read.csv(destFile)
+stormdata <- as_tibble(stormdata)
+dim(stormdata)
+```
+It shows that the data has `r dim(stormdata)[1]` records and `r dim(stormdata)[2]` variables. Not all variables are related with our objective. Referring to [Storm Data Documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf), 7 variables are selected: 
+* `r EVTYPE` specifying the weather event's type;   
+* `r FATALITIES` and `r INJURIES` show the number of fatalities and injuries caused by weather events. These two variables are related with population health.  
+* `r PROPDMG` and `r CROPDMG` shows the values of property and crop damages respectively. `r PROPDMGEXP`, `r CROPDMGEXP` specifying the magnitude of the numbers. These four variables are related with economic loss.
+
+```{r data-processing-ph, warning=FALSE}
+# dataset for population health
+ph <- select(stormdata, EVTYPE, FATALITIES, INJURIES)
+sum_ph <- summary(ph)
+kable(sum_ph)
+
+tha <- group_by(ph, EVTYPE) %>%
+  summarise(total_human_affected = sum(FATALITIES + INJURIES)) %>%
+  arrange(desc(total_human_affected))
+```
+The sum of `r FATALITIES` and `r INJURIES` is used to represent the impact for population health.
+
+```{r data-processing-ec-1, cache=TRUE}
+# dataset for economic consequences
+ec <- select(sdt, EVTYPE, contains("DMG")) 
+kable(summary(ec))
+# leave out irregular values
+clean_ec<- filter(ec, PROPDMGEXP %in% c("","K","M","B"), CROPDMGEXP %in% c("","K","M","B"))
+```
+From the documentation, in magnitude variables, `r K` represents thousands, `r M` for millions, and `r B` for billions. Since there are lots of values are white space, it's inappropriate to drop them. Instead, I assume it represents the magnitude of 1. For other irregular values, I leave them out. The cleaned data still has more than `r round(nrow(clean_ec)/nrow(ec), n=4)` observations of original one.
+To calculate the impact of weather events for economy, I combined numbers and their magnitude at first. Then I sum the values of property and crop damages to represent the total economic losses.
+```{r data-processing-ec-2, warning=FALSE}
+# to save some typing
+names(clean_ec) <- c("EVTYPE", "P", "PE", "C", "CE")
+
+clean_ec$PROP[clean_ec$PE == ""] <- clean_ec$P[clean_ec$PE == ""] * 1
+clean_ec$PROP[clean_ec$PE == "K"] <- clean_ec$P[clean_ec$PE == "K"] * 10^3
+clean_ec$PROP[clean_ec$PE == "M"] <- clean_ec$P[clean_ec$PE == "M"] * 10^6
+clean_ec$PROP[clean_ec$PE == "B"] <- clean_ec$P[clean_ec$PE == "B"] * 10^9
+  
+clean_ec$CROP[clean_ec$CE == ""] <- clean_ec$C[clean_ec$CE == ""] * 1
+clean_ec$CROP[clean_ec$CE == "K"] <- clean_ec$C[clean_ec$CE == "K"] * 10^3
+clean_ec$CROP[clean_ec$CE == "M"] <- clean_ec$C[clean_ec$CE == "M"] * 10^6
+clean_ec$CROP[clean_ec$CE == "B"] <- clean_ec$C[clean_ec$CE == "B"] * 10^9 
+
+tec <- group_by(clean_ec, EVTYPE) %>%
+  summarise(TOTAL = sum(CROP + PROP)) %>%
+  arrange(desc(TOTAL))
 ```
 
-## Including Plots
+# Results
+```{r }
+tha <- mutate(tha, cum_percent = cumsum(total_human_affected)/sum(total_human_affected))
+levels(tha$EVTYPE) <- tha$EVTYPE
+tha_10 <- tha[1:10,]
+ggplot(tha_10, aes(x = reorder(EVTYPE, total_human_affected))) + 
+  geom_col(aes(y = total_human_affected)) +
+    coord_flip()
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
+  
+  
+  
+  
+  
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

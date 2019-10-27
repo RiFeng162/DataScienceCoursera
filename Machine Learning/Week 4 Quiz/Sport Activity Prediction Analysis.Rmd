@@ -7,7 +7,7 @@ output:
     keep_md: TRUE
 ---
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(eacho = TRUE)
 library(caret)
 library(knitr)
 library(dplyr)
@@ -39,7 +39,7 @@ According to [expriment description](http://web.archive.org/web/20161224072740/h
 # calculate the ratio of NA in each predictor
 na_ratio <- sapply(data.x, 
                    function(x) round(sum(is.na(x))/dim(data.x)[1] , 2))
-kable(head(na_ratio, 10), col.names =  "Ratio of NA")
+head(na_ratio, 10)
 # remove predictors with too many NAs
 data.newx <- data.x[, na_ratio < 0.95]
 
@@ -99,10 +99,12 @@ scales <- list(x = list(relation = "free"),
 bwplot(fit.compare, scales = scales)
 
 compare.accuracy <- summary(fit.compare)$statistics$Accuracy[,"Mean"] %>% round(digits = 2)
-kable(compare.accuracy, col.names = "Accuracy")
+compare.accuracy
 ```
   
-According to the plot, the **Random Forest** model ranks top1 in both Accuracy and Kappa (multi-class metrics). Which also means the relation between response(_classe_) and principal components are highly non-linear.  
+According to the plot, the **Random Forest** model ranks top 1 in both Accuracy and Kappa (multi-class metrics). Which also means the relation between response(_classe_) and principal components are highly non-linear.
+  
+The estimated accuracy is `r compare.accuracy["RF"]` (or the estimated test error rate is `r 1-compare.accuracy["RF"]`).  
 
 ```{r variable importance}
 plot(varImp(fit.rf))
@@ -128,7 +130,8 @@ rf.pred <- data.frame(index = data.test$problem_id,
 ```
   
 The testing set should be preprocessed in the same way as training set does.  
-The accuracy of testing prediction is 95% checked by Prediction Quiz.
+The accuracy of testing prediction is 95% checked by Prediction Quiz which is quite close to the estimated accuracy `r compare.accuracy["RF"]` from cross-validation.
+
 
 
 

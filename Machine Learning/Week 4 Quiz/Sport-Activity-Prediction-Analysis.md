@@ -36,21 +36,19 @@ According to [expriment description](http://web.archive.org/web/20161224072740/h
 # calculate the ratio of NA in each predictor
 na_ratio <- sapply(data.x, 
                    function(x) round(sum(is.na(x))/dim(data.x)[1] , 2))
-kable(head(na_ratio, 10), col.names =  "Ratio of NA")
+head(na_ratio, 10)
 ```
 
-                        Ratio of NA
----------------------  ------------
-roll_belt                      0.00
-pitch_belt                     0.00
-yaw_belt                       0.00
-total_accel_belt               0.00
-kurtosis_roll_belt             0.98
-kurtosis_picth_belt            0.98
-kurtosis_yaw_belt              1.00
-skewness_roll_belt             0.98
-skewness_roll_belt.1           0.98
-skewness_yaw_belt              1.00
+```
+##            roll_belt           pitch_belt             yaw_belt 
+##                 0.00                 0.00                 0.00 
+##     total_accel_belt   kurtosis_roll_belt  kurtosis_picth_belt 
+##                 0.00                 0.98                 0.98 
+##    kurtosis_yaw_belt   skewness_roll_belt skewness_roll_belt.1 
+##                 1.00                 0.98                 0.98 
+##    skewness_yaw_belt 
+##                 1.00
+```
 
 ```r
 # remove predictors with too many NAs
@@ -117,16 +115,17 @@ bwplot(fit.compare, scales = scales)
 
 ```r
 compare.accuracy <- summary(fit.compare)$statistics$Accuracy[,"Mean"] %>% round(digits = 2)
-kable(compare.accuracy, col.names = "Accuracy")
+compare.accuracy
 ```
 
-       Accuracy
-----  ---------
-RF         0.93
-SVM        0.80
-LDA        0.51
+```
+##   RF  SVM  LDA 
+## 0.93 0.80 0.53
+```
   
-According to the plot, the **Random Forest** model ranks top1 in both Accuracy and Kappa (multi-class metrics). Which also means the relation between response(_classe_) and principal components are highly non-linear.  
+According to the plot, the **Random Forest** model ranks top 1 in both Accuracy and Kappa (multi-class metrics). Which also means the relation between response(_classe_) and principal components are highly non-linear.
+  
+The estimated accuracy is 0.93 (or the estimated test error rate is 0.07).  
 
 
 ```r
@@ -156,7 +155,8 @@ rf.pred <- data.frame(index = data.test$problem_id,
 ```
   
 The testing set should be preprocessed in the same way as training set does.  
-The accuracy of testing prediction is 95% checked by Prediction Quiz.
+The accuracy of testing prediction is 95% checked by Prediction Quiz which is quite close to the estimated accuracy 0.93 from cross-validation.
+
 
 
 

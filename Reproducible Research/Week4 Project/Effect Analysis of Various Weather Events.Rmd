@@ -1,0 +1,118 @@
+---
+title: "Effect Analysis of Various Weather Events"
+author: "FengRi"
+date: "15/8/2019"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pkg <- c("dplyr", "ggplot2", "knitr")
+lapply(pkg, require, character.only = TRUE)
+```
+
+
+# Synopsis
+This document is for the [Project 2](https://www.coursera.org/learn/reproducible-research/peer/OMZ37/course-project-2) of Reproducible Research on Coursera. The project requires to find which kinds of weather types have greatest impact on population health and economy respectively. By analyzing the given data, it turns out that `TORNADO` is most harmful to population health while `FLOOD` causes greatest economic loss.
+
+# Data Processing
+```{r data-importing, cache=TRUE, warning=FALSE}
+stormdata <- read.csv("data/StormData.csv.bz2")
+dim(stormdata)
+```
+  
+It shows that the data has `r dim(stormdata)[1]` records and `r dim(stormdata)[2]` variables. Not all variables are related with our objectives. Referring to [Storm Data Documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf), 7 variables are selected:   
+* `EVTYPE` specifying the weather event's type;   
+* `FATALITIES` and `INJURIES` show the number of fatalities and injuries caused by weather events. These two variables are related with population health.  
+* `PROPDMG` and `CROPDMG` shows the values of property and crop damages respectively. `PROPDMGEXP`, `CROPDMGEXP` specifying the magnitude of the numbers. These four variables are related with economic loss.
+
+```{r data-processing-ph, warning=FALSE}
+# dataset for population health
+ph <- select(stormdata, EVTYPE, FATALITIES, INJURIES)
+sum_ph <- summary(ph)
+kable(sum_ph)
+
+# calculate total impact of weather events to population health
+tph <- group_by(ph, EVTYPE) %>%
+  summarise(total_pop_hurt = sum(FATALITIES + INJURIES)) %>%
+  arrange(desc(total_pop_hurt))
+print(tph, n = 5)
+```
+The sum of `FATALITIES` and `INJURIES` is used to represent the impact of weather events to population health.
+
+```{r data-processing-ec-1}
+# dataset for economic consequences
+ec <- select(stormdata, EVTYPE, contains("DMG")) 
+kable(summary(ec))
+
+# leave out irregular values
+clean_ec<- filter(ec, PROPDMGEXP %in% c("","K","M","B"), CROPDMGEXP %in% c("","K","M","B"))
+kable(summary(clean_ec))
+```
+  
+From the documentation, in magnitude variables, `K` represents thousands, `M` for millions, and `B` for billions. Since there are lots of values are white space, it's inappropriate to simply drop them off. Instead, I assume it represents the magnitude of 1. For other irregular values, I leave them out. The cleaned data still has more than `r round(nrow(clean_ec)/nrow(ec), 4)` proportion of original one.
+To calculate the impact of weather events for economy, I combined numbers and their magnitude at first. Then I sum the values of property and crop damages to represent the total economic losses.
+```{r data-processing-ec-2, warning=FALSE}
+# translate K,M,B into 1000,...
+chartonum <- function(x) {
+  factor(x,
+         levels = c("","K","M","B"),
+         labels = c(1, 1000, 1000000, 1000000000)) %>% 
+    as.character() %>% as.numeric()
+}
+clean_ec$PROPDMGEXP <- chartonum(clean_ec$PROPDMGEXP)
+clean_ec$CROPDMGEXP <- chartonum(clean_ec$CROPDMGEXP)
+
+tec <- group_by(clean_ec, EVTYPE) %>%
+  summarise(total = sum(PROPDMG*PROPDMGEXP + CROPDMG*CROPDMGEXP)) %>%
+  arrange(desc(total))
+print(tec, n=5)
+```
+
+# Results
+```{r plot-tph, fig.align="center"}
+tph_10 <- tph[1:10,]
+ggplot(tph_10, aes(x = reorder(EVTYPE, total_pop_hurt), y = total_pop_hurt)) +
+  geom_col() +
+  labs(title = "Top 10 Events with Greatest Harm to Population Health",
+       x = "", y = "", caption = "The values are the numbers of total people dead or injured.") + 
+  coord_flip()
+
+```
+  
+**It shows that `r tph[1,1]` is most harmful to population health**. It caused about 100,000 people dead or injured. 
+
+```{r plot-tec, fig.align="center"}
+tec_copy <- mutate(tec, percent = total/ sum(total), 
+                   cum_per = cumsum(percent))
+tec_10 <- tec_copy[1:10,]
+
+ggplot(tec_10, aes(x = reorder(EVTYPE, total), y = percent)) +
+  geom_col() +
+  geom_line(aes(y = cum_per, group = 1) , lty = 2, color = "wheat4") + 
+  scale_y_continuous(limits = c(0,1)) +
+  labs(title = "Top 10 Events with Greatest Economic Consequences",
+       x = "", y = "", caption = "Values are calculated percentage of the total losses.") + 
+  geom_text(aes(label = round(percent, 2)), size = 3,
+            hjust = 0, nudge_y = 0.05) + 
+  coord_flip()
+```
+  
+**The plot reveals that `r tec[1,1]` has the greatest economic consequences which is about `r round(tec_10[1,3],2)` proportion of the total economic loss. **
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

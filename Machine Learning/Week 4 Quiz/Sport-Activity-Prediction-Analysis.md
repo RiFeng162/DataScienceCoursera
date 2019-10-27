@@ -55,7 +55,7 @@ Three kinds of models are applied:
        Accuracy
 ----  ---------
 RF         0.93
-SVM        0.81
+SVM        0.80
 LDA        0.53
   
 According to the plot, the **Random Forest** model ranks top1 in both Accuracy and Kappa (multi-class metrics). Which also means the relation between response(_classe_) and principal components are highly non-linear.  

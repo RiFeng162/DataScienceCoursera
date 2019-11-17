@@ -1,0 +1,36 @@
+---
+title: "Choropleth with leaflet"
+author: "Feng Ri"
+date: "11/18/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(leaflet)
+library(geojsonio)
+```
+
+## Introduction
+The plot shows the provinces of China which implemented with leaflet package in R. Since limited by the [data](http://datav.aliyun.com/tools/atlas/#&lat=26.31311263768267&lng=85.078125&zoom=4), only the contour of the provinces is shown while other attributes(eg:population density) are not included.
+
+```{r plot, cache=TRUE, fig.align='center'}
+# import GeoJSON data to R environment as sp-object
+china <- geojson_read("中国.json", what = "sp")
+
+# create blank map
+m <- leaflet(china) %>%
+  addProviderTiles("MapBox", options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+
+m %>% addPolygons(weight = 1,
+                  opacity = 1,
+                  fillColor = "blue",
+                  fillOpacity = 0.3,
+                  highlight = highlightOptions(weight = 2,
+                                               color = "white",
+                                               bringToFront = TRUE),
+                  label = ~name)
+```
+

@@ -1,0 +1,51 @@
+---
+title: "House Price Analysis"
+author: "Feng Ri"
+date: "11/25/2019"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+```
+
+## Introduction
+_txhousing_ data set from _ggplot2_ package is used to generate the plot. Data is about the housing market in Texas. The objective is to show the average sales price monthly for 5 cities with highest sales.
+Related variables are:  
+- **city** - city names of MLS area  
+- **sales** - number of sales  
+- **volume** - total value of sales  
+- **date** - date for the sales  
+
+## Code
+```{r, echo = TRUE, eval=FALSE} 
+txh <- txhousing %>%
+  mutate(avg_price = volume/sales)
+top5 <- txhousing %>%
+  group_by(city) %>%
+  summarise(avg_sales = mean(sales, na.rm = TRUE)) %>%
+  arrange(desc(avg_sales)) %>%
+  top_n(5)
+txh.5 <- semi_join(txh, top5, by = "city")
+plot_ly(txh.5, x = ~date, y = ~avg_price) %>%
+  add_lines(linetype = ~city)
+```
+
+## Plot
+```{r, echo=FALSE, eval=TRUE} 
+txh <- txhousing %>%
+  mutate(avg_price = volume/sales)
+top5 <- txhousing %>%
+  group_by(city) %>%
+  summarise(avg_sales = mean(sales, na.rm = TRUE)) %>%
+  arrange(desc(avg_sales)) %>%
+  top_n(5)
+txh.5 <- semi_join(txh, top5, by = "city")
+plot_ly(txh.5, x = ~date, y = ~avg_price) %>%
+  add_lines(linetype = ~city)
+```
+
+## Thank you
